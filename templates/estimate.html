@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repair Estimate</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(45deg, #6ab7f5, #f086d3);
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.5rem;
+        }
+        .section-title {
+            color: #3498db;
+            font-size: 1.8rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .image-item {
+            flex: 1 1 300px; /* Flexbox for responsive items */
+            max-width: 450px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            text-align: center;
+        }
+        .image-item img {
+            width: 100%;
+            height: auto;
+            border-bottom: 1px solid #eee;
+        }
+        .image-item p {
+            padding: 15px;
+            font-size: 1.1rem;
+            color: #555;
+            margin: 0;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        .report-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        .report-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .total-estimate {
+            text-align: right;
+            margin-top: 30px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .total-estimate span {
+            font-size: 2.2rem;
+            color: #e74c3c;
+            margin-left: 10px;
+        }
+        .back-button {
+            display: block;
+            width: 250px;
+            padding: 12px 20px;
+            margin: 40px auto 0;
+            background-color: #f39c12;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #e67e22;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .no-damage-message {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #27ae60;
+            padding: 30px;
+            border: 2px dashed #27ae60;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Damage Repair Estimate</h2>
+
+        {% if part_prices is defined %}
+            <h3 class="section-title">Image Analysis Results</h3>
+            <div class="image-gallery">
+                <div class="image-item">
+                    <img src="{{ url_for('static', filename=original_image) }}" alt="Original Image">
+                    <p>Original Upload</p>
+                </div>
+                <div class="image-item">
+                    <img src="{{ url_for('static', filename=detected_image) }}" alt="Detected Image">
+                    <p>Damage Detected (AI Analysis)</p>
+                </div>
+            </div>
+            
+            {% if part_prices %}
+                <h3 class="section-title">Estimated Repair Costs</h3>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Part</th>
+                            <th>Count</th>
+                            <th>Price per Part</th>
+                            <th>Total for Part</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for part, data in part_prices.items() %}
+                        <tr>
+                            <td>{{ part }}</td>
+                            <td>{{ data.count }}</td>
+                            <td>₹{{ "{:,.2f}".format(data.price) }}</td>
+                            <td>₹{{ "{:,.2f}".format(data.total) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="total-estimate">
+                    Overall Estimated Total: <span>₹{{ "{:,.2f}".format(part_prices.values() | map(attribute='total') | sum) }}</span>
+                </div>
+            {% else %}
+                <div class="no-damage-message">
+                    <i class="fas fa-check-circle"></i> No damage detected in the uploaded image.
+                </div>
+            {% endif %}
+
+        {% elif estimate is defined %}
+            <h3 class="section-title">Video Analysis Results</h3>
+            
+            {% if estimate.detected_images %}
+                <div class="image-gallery">
+                    {% for img_path in estimate.detected_images %}
+                    <div class="image-item">
+                        <img src="{{ url_for('static', filename=img_path) }}" alt="Detected Damage Frame">
+                        <p>Damage Detected in Video Frame</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if estimate.itemized_report %}
+                <h3 class="section-title">Estimated Repair Costs</h3>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Part</th>
+                            <th>Estimated Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in estimate.itemized_report %}
+                        <tr>
+                            <td>{{ item.part_name }}</td>
+                            <td>₹{{ "{:,.2f}".format(item.price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="total-estimate">
+                    Overall Estimated Total: <span>₹{{ "{:,.2f}".format(estimate.total_price) }}</span>
+                </div>
+            {% else %}
+                <div class="no-damage-message">
+                    <i class="fas fa-check-circle"></i> No significant damage detected in the uploaded video.
+                </div>
+            {% endif %}
+
+        {% else %}
+            <p>No estimate data available. Please upload a file.</p>
+        {% endif %}
+
+        <a href="{{ url_for('dashboard') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Go Back to Dashboard
+        </a>
+    </div>
+</body>
+</html>
